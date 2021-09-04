@@ -18,15 +18,14 @@ func main() {
 	fmt.Println("Starting the application...")
 	r := mux.NewRouter()
 
-	r.HandleFunc("/profile/{id}", getProfile).Methods("GET")
-	r.HandleFunc("/profiles", getProfiles).Methods("GET")
+	r.HandleFunc("/profile/{id}", helper.ValidateMiddleware(getProfile)).Methods("GET")
+	r.HandleFunc("/profiles", helper.ValidateMiddleware(getProfiles)).Methods("GET")
 
 	log.Fatal(http.ListenAndServe(":8888", r))
 }
 
 type Profiles struct {
 	Skill    string
-	Profile  string
 	Gender   string
 	Location string
 }
@@ -38,7 +37,7 @@ func getProfile(w http.ResponseWriter, r *http.Request) {
 	id, _ := (params["id"])
 	collection := helper.Connect()
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
-	err := collection.FindOne(ctx, Profiles{Profile: id}).Decode(&profile)
+	err := collection.FindOne(ctx, bson.M{"linkedin_username": id}).Decode(&profile)
 	if err == mongo.ErrNoDocuments {
 		fmt.Println("record does not exist")
 		w.WriteHeader(http.StatusNoContent)
